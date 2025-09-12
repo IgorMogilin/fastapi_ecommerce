@@ -3,7 +3,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey
 
 from app.database import Base
-from app.models import Category
 
 
 class Product(Base):
@@ -21,4 +20,4 @@ class Product(Base):
         nullable=False
     )
 
-    category: Mapped["Category"] = relationship(back_populates="products")
+    category: Mapped["Category"] = relationship("Category", back_populates="products")
