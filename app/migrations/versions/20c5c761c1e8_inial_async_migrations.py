@@ -1,8 +1,8 @@
-"""Create categories and products tables
+"""Inial async migrations
 
-Revision ID: 7ccffa5bf43e
+Revision ID: 20c5c761c1e8
 Revises: 
-Create Date: 2025-09-13 01:26:47.784213
+Create Date: 2025-09-19 02:15:20.357468
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '7ccffa5bf43e'
+revision: str = '20c5c761c1e8'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

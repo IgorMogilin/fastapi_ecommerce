@@ -20,4 +20,7 @@ class Product(Base):
         nullable=False
     )
 
-    category: Mapped["Category"] = relationship("Category", back_populates="products")
+    category: Mapped["Category"] = relationship(
+        "Category",
+        back_populates="products"
+    )

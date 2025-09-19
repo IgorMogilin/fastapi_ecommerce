@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update
-from sqlalchemy.orm import session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db_depends import get_db
+from app.db_depends import get_async_db
 from app.models import Category as CategoryModel
 from app.models import Product as ProductModel
 from app.schemas import Product as ProductSchema
@@ -20,13 +20,13 @@ router = APIRouter(
         status_code=status.HTTP_200_OK
     )
 async def get_all_products(
-    db: session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ) -> list[ProductSchema]:
     """Возвращает список всех товаров."""
-    result = db.scalars(
+    result = await db.scalars(
         select(ProductModel).where(ProductModel.is_active)
-    ).all()
-    return result or []
+    )
+    return result.all() or []
 
 
 @router.post(
@@ -36,14 +36,15 @@ async def get_all_products(
         )
 async def create_product(
     product: ProductCreate,
-    db: session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ) -> ProductCreate:
     """Создаёт новый товар."""
     smt = select(CategoryModel).where(
             CategoryModel.id == product.category_id,
             CategoryModel.is_active
         )
-    category_result = db.scalars(smt).first()
+    pre_category_result = await db.scalars(smt)
+    category_result = pre_category_result.first()
     if not category_result:
         raise HTTPException(
             status_code=400,
@@ -51,8 +52,7 @@ async def create_product(
         )
     db_product = ProductModel(**product.model_dump(), is_active=True)
     db.add(db_product)
-    db.commit()
-    db.refresh(db_product)
+    await db.commit()
     return db_product
 
 
@@ -63,21 +63,22 @@ async def create_product(
     )
 async def get_products_by_category(
     category_id: int,
-    db: session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ) -> list[ProductSchema]:
     """Возвращает список товаров в указанной категории по её ID."""
     smt = select(CategoryModel).where(CategoryModel.id == category_id)
-    request_category = db.scalars(smt).first()
+    pre_request_category = await db.scalars(smt)
+    request_category = pre_request_category.first()
     if not request_category:
         raise HTTPException(
             status_code=404,
             detail="Category not found"
         )
-    result = db.scalars(select(ProductModel).where(
+    result = await db.scalars(select(ProductModel).where(
         ProductModel.category_id == category_id,
         ProductModel.is_active
-    )).all()
-    return result or []
+    ))
+    return result.all() or []
 
 
 @router.get(
@@ -87,14 +88,15 @@ async def get_products_by_category(
     )
 async def get_product(
     product_id: int,
-    db: session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ) -> ProductSchema:
     """Возвращает детальную информацию о товаре по его ID."""
     smt = select(ProductModel).where(
         ProductModel.id == product_id,
         ProductModel.is_active
     )
-    request_product = db.scalars(smt).first()
+    pre_request_product = await db.scalars(smt)
+    request_product = pre_request_product.first()
     if not request_product:
         raise HTTPException(
             status_code=404,
@@ -105,7 +107,8 @@ async def get_product(
         CategoryModel.id == request_category,
         CategoryModel.is_active
     )
-    result = db.scalars(smt2).first()
+    pre_result = await db.scalars(smt2)
+    result = pre_result.first()
     if not result:
         raise HTTPException(
             status_code=400,
@@ -122,14 +125,15 @@ async def get_product(
 async def update_product(
     product_id: int,
     product: ProductCreate,
-    db: session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ) -> ProductCreate:
     """Обновляет товар по его ID."""
     stmt = select(ProductModel).where(
         ProductModel.id == product_id,
         ProductModel.is_active
     )
-    request_product = db.scalars(stmt).first()
+    pre_request_product = await db.scalars(stmt)
+    request_product = pre_request_product.first()
     if not request_product:
         raise HTTPException(
             status_code=404,
@@ -140,19 +144,19 @@ async def update_product(
         CategoryModel.id == request_category,
         CategoryModel.is_active
     )
-    result = db.scalars(smt2).first()
+    pre_result = await db.scalars(smt2)
+    result = pre_result.first()
     if not result:
         raise HTTPException(
             status_code=400,
             detail="Category not found"
         )
-    db.execute(
+    await db.execute(
         update(ProductModel)
         .where(ProductModel.id == product_id)
         .values(**product.model_dump())
     )
-    db.commit()
-    db.refresh(request_product)
+    await db.commit()
     return request_product
 
 
@@ -162,14 +166,15 @@ async def update_product(
     )
 async def delete_product(
     product_id: int,
-    db: session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ) -> dict:
     """Удаляет товар по его ID."""
     stmt = select(ProductModel).where(
         ProductModel.id == product_id,
         ProductModel.is_active
     )
-    request_product = db.scalars(stmt).first()
+    pre_request_product = await db.scalars(stmt)
+    request_product = pre_request_product.first()
     if not request_product:
         raise HTTPException(
             status_code=404,
@@ -180,16 +185,17 @@ async def delete_product(
         CategoryModel.id == request_category,
         CategoryModel.is_active
     )
-    result = db.scalars(smt2).first()
+    pre_result = await db.scalars(smt2)
+    result = pre_result.first()
     if not result:
         raise HTTPException(
             status_code=400,
             detail="Category not found"
         )
-    db.execute(
+    await db.execute(
         update(ProductModel)
         .where(ProductModel.id == product_id)
         .values(is_active=False)
     )
-    db.commit()
+    await db.commit()
     return {"status": "success", "message": "Product marked as inactive"}
