@@ -1,5 +1,7 @@
+from decimal import Decimal
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional
+from datetime import datetime
 
 
 class CategoryCreate(BaseModel):
@@ -67,6 +69,10 @@ class Product(BaseModel):
     name: str = Field(description="Название товара")
     description: Optional[str] = Field(None, description="Описание товара")
     price: float = Field(description="Цена товара")
+    raiting: Optional[Decimal] = Field(
+        None,
+        description='Рейтинг товара',
+    )
     image_url: Optional[str] = Field(
         None,
         description="URL изображения товара"
@@ -97,3 +103,51 @@ class User(BaseModel):
     is_active: bool
     role: str
     model_config = ConfigDict(from_attributes=True)
+
+
+class ReviewCreate(BaseModel):
+    product_id: int = Field(
+        ...,
+        description='ID товара',
+    )
+    comment: str | None = Field(
+        None,
+        description='Комментарий',
+    )
+    grade: int = Field(
+        ...,
+        ge=1,
+        le=5,
+        description='Оценка',
+    )
+
+
+class ReviewResponse(BaseModel):
+    id: int = Field(
+        ...,
+        description='ID отзыва'
+    )
+    user_id: int = Field(
+        ...,
+        description='ID пользователя'
+    )
+    product_id: int = Field(
+        ...,
+        description='ID товара'
+    )
+    comment: str = Field(
+        ...,
+        description='Текст комментария'
+    )
+    comment_date: datetime = Field(
+        ...,
+        description='Дата комментария'
+    )
+    grade: Decimal = Field(
+        ...,
+        description='Оценка',
+    )
+    is_active: bool = Field(
+        ...,
+        description='Активность отзыва'
+    )
