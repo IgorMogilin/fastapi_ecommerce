@@ -1,14 +1,15 @@
-from decimal import Decimal
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
-from typing import Optional
 from datetime import datetime
+from decimal import Decimal
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class CategoryCreate(BaseModel):
-    """
-    Модель для создания и обновления категории.
+    """Модель для создания и обновления категории.
     Используется в POST и PUT запросах.
     """
+
     name: str = Field(min_length=3, max_length=50,
                       description="Название категории (3-50 символов)")
     parent_id: Optional[int] = Field(
@@ -18,10 +19,10 @@ class CategoryCreate(BaseModel):
 
 
 class Category(BaseModel):
-    """
-    Модель для ответа с данными категории.
+    """Модель для ответа с данными категории.
     Используется в GET-запросах.
     """
+
     id: int = Field(description="Уникальный идентификатор категории")
     name: str = Field(description="Название категории")
     parent_id: Optional[int] = Field(
@@ -34,10 +35,10 @@ class Category(BaseModel):
 
 
 class ProductCreate(BaseModel):
-    """
-    Модель для создания и обновления товара.
+    """Модель для создания и обновления товара.
     Используется в POST и PUT запросах.
     """
+
     name: str = Field(min_length=3, max_length=100,
                       description="Название товара (3-100 символов)")
     description: Optional[str] = Field(
@@ -61,10 +62,10 @@ class ProductCreate(BaseModel):
 
 
 class Product(BaseModel):
-    """
-    Модель для ответа с данными товара.
+    """Модель для ответа с данными товара.
     Используется в GET-запросах.
     """
+
     id: int = Field(description="Уникальный идентификатор товара")
     name: str = Field(description="Название товара")
     description: Optional[str] = Field(None, description="Описание товара")
@@ -85,6 +86,8 @@ class Product(BaseModel):
 
 
 class UserCreate(BaseModel):
+    """Схема создания нового пользователя."""
+
     email: EmailStr = Field(description="Email пользователя")
     password: str = Field(
         min_length=8,
@@ -98,6 +101,8 @@ class UserCreate(BaseModel):
 
 
 class User(BaseModel):
+    """Схема для получения данных пользователя."""
+
     id: int
     email: EmailStr
     is_active: bool
@@ -106,6 +111,8 @@ class User(BaseModel):
 
 
 class ReviewCreate(BaseModel):
+    """Схема для создания отзыва."""
+
     product_id: int = Field(
         ...,
         description='ID товара',
@@ -123,6 +130,8 @@ class ReviewCreate(BaseModel):
 
 
 class ReviewResponse(BaseModel):
+    """Схема для получения отзыва."""
+
     id: int = Field(
         ...,
         description='ID отзыва'

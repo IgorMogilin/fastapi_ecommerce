@@ -1,10 +1,9 @@
 from sqlalchemy.ext.asyncio import (
-    create_async_engine,
+    AsyncSession,
     async_sessionmaker,
-    AsyncSession
+    create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase
-
 
 DATABASE_URL = "postgresql+asyncpg://ecommerce_user:1234@localhost:5432/ecommerce_db" # noqa
 

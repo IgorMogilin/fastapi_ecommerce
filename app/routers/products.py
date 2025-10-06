@@ -2,14 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import get_current_seller
 from app.db_depends import get_async_db
 from app.models import Category as CategoryModel
 from app.models import Product as ProductModel
+from app.models.users import User as UserModel
 from app.schemas import Product as ProductSchema
 from app.schemas import ProductCreate
-from app.models.users import User as UserModel
-from app.auth import get_current_seller
-
 
 router = APIRouter(
     prefix="/products",
@@ -26,10 +25,8 @@ async def create_product(
     product: ProductCreate,
     db: AsyncSession = Depends(get_async_db),
     current_user: UserModel = Depends(get_current_seller)
-):
-    """
-    Создаёт новый товар, привязанный к текущему продавцу (только для 'seller').
-    """
+) -> ProductSchema:
+    """Создаёт новый товар, только для 'seller')."""
     category_result = await db.scalars(
         select(CategoryModel).where(
             CategoryModel.id == product.category_id,
@@ -57,9 +54,8 @@ async def update_product(
     product: ProductCreate,
     db: AsyncSession = Depends(get_async_db),
     current_user: UserModel = Depends(get_current_seller)
-):
-    """
-    Обновляет товар, если он
+) -> ProductSchema:
+    """Обновляет товар, если он
     принадлежит текущему продавцу (только для 'seller').
     """
     result = await db.scalars(
@@ -101,9 +97,8 @@ async def delete_product(
     product_id: int,
     db: AsyncSession = Depends(get_async_db),
     current_user: UserModel = Depends(get_current_seller)
-):
-    """
-    Выполняет мягкое удаление товара,
+) -> ProductSchema:
+    """Выполняет мягкое удаление товара,
     если он принадлежит текущему продавцу (только для 'seller').
     """
     result = await db.scalars(

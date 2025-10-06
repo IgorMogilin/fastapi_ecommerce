@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.routers import categories, products, users, reviews
+from app.routers import categories, products, reviews, users
 
 app = FastAPI(
     title="FastAPI Интернет-магазин",
@@ -14,8 +14,6 @@ app.include_router(reviews.router)
 
 
 @app.get("/")
-async def root():
-    """
-    Корневой маршрут, подтверждающий, что API работает.
-    """
+async def root() -> dict:
+    """Корневой маршрут, подтверждающий, что API работает."""
     return {"message": "Добро пожаловать в API интернет-магазина!"}

@@ -7,9 +7,8 @@ Create Date: 2025-10-04 02:17:18.820249
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = '3ecd9b21ec47'
@@ -26,7 +25,7 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=50), nullable=False),
     sa.Column('parent_id', sa.Integer(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
-    sa.ForeignKeyConstraint(['parent_id'], ['categories.id'], ),
+    sa.ForeignKeyConstraint(['parent_id'], ['categories.id'] ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('users',
@@ -48,8 +47,8 @@ def upgrade() -> None:
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('category_id', sa.Integer(), nullable=False),
     sa.Column('seller_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ),
-    sa.ForeignKeyConstraint(['seller_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['category_id'], ['categories.id'] ),
+    sa.ForeignKeyConstraint(['seller_id'], ['users.id'] ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('reviews',
@@ -61,8 +60,8 @@ def upgrade() -> None:
     sa.Column('grade', sa.Integer(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.CheckConstraint('grade >= 1 AND grade <= 5', name='check_grade_range'),
-    sa.ForeignKeyConstraint(['product_id'], ['products.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['product_id'], ['products.id'] ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'] ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_reviews_id'), 'reviews', ['id'], unique=True)

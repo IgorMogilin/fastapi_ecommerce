@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy import func, select, update
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db_depends import get_async_db
-from app.models.reviews import Review
-from app.models.products import Product
-from app.schemas import ReviewCreate, ReviewResponse
 from typing import List
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db_depends import get_async_db
+from app.models.products import Product
+from app.models.reviews import Review
+from app.schemas import ReviewCreate, ReviewResponse
 
 router = APIRouter(
     tags=['reviews'],
@@ -19,7 +20,8 @@ router = APIRouter(
 )
 async def get_all_active_reviews(
     db: AsyncSession = Depends(get_async_db)
-):
+) -> List[ReviewResponse]:
+    """Получает список всех активных отзывов."""
     result = await db.scalars(
         select(Review)
         .where(Review.is_active)
@@ -34,7 +36,8 @@ async def get_all_active_reviews(
 async def get_reviews_for_product(
     product_id: int,
     db: AsyncSession = Depends(get_async_db),
-):
+) -> List[ReviewResponse]:
+    """Получает список всех отзывов на данный товар."""
     request_product = await db.scalars(
         select(Product)
         .where(Product.id == product_id)
@@ -61,7 +64,8 @@ async def get_reviews_for_product(
 async def create_review(
     review: ReviewCreate,
     db: AsyncSession = Depends(get_async_db),
-):
+) -> ReviewResponse:
+    """Создает новый отзыв на товар."""
     prepare_product = await db.scalar(
         select(Product)
         .where(Product.id == review.product_id)
@@ -78,7 +82,9 @@ async def create_review(
         .where(Review.is_active)
     )
     result_reviews = product_reviews.all()
-    sum_raiting = (sum(result_reviews) + review.grade) / (len(result_reviews) + 1)
+    sum_raiting = (
+        sum(result_reviews) + review.grade
+        ) / (len(result_reviews) + 1)
     await db.execute(
         update(Product)
         .where(Product.id == review.product_id)
@@ -96,8 +102,9 @@ async def create_review(
 )
 async def delete_review(
     review_id: int,
-    db: AsyncSession = Depends(get_all_active_reviews)
+    db: AsyncSession = Depends(get_async_db)
 ) -> dict:
+    """Удаляет отзыв на товар по ID."""
     request_review = await db.scalar(
         select(Review)
         .where(Review.id == review_id)
@@ -108,3 +115,23 @@ async def delete_review(
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Отзыв не найден или не активен'
         )
+    product_reviews = await db.scalars(
+        select(Review.grade)
+        .where(Review.product_id == request_review.product_id)
+        .where(Review.is_active)
+        .where(Review.id != request_review.id)
+    )
+    result_reviews = product_reviews.all()
+    sum_raiting = sum(result_reviews) / len(result_reviews)
+    await db.execute(
+        update(Product)
+        .where(Product.id == request_review.product_id)
+        .values(rating=sum_raiting)
+    )
+    await db.execute(
+        update(Review)
+        .where(Review.id == review_id)
+        .values(is_active=False)
+    )
+    await db.commit()
+    return {"message": "Review deleted"}
