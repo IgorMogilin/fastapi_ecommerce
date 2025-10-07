@@ -95,8 +95,8 @@ class UserCreate(BaseModel):
     )
     role: str = Field(
         default="buyer",
-        pattern="^(buyer|seller)$",
-        description="Роль: 'buyer' или 'seller'"
+        pattern="^(buyer|seller|admin)$",
+        description="Роль: 'buyer', 'admin', или 'seller'"
     )
 
 

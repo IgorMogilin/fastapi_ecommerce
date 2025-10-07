@@ -4,9 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import get_current_admin, get_current_buyer
 from app.db_depends import get_async_db
 from app.models.products import Product
 from app.models.reviews import Review
+from app.models.users import User as UserModel
 from app.schemas import ReviewCreate, ReviewResponse
 
 router = APIRouter(
@@ -64,6 +66,7 @@ async def get_reviews_for_product(
 async def create_review(
     review: ReviewCreate,
     db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_buyer)
 ) -> ReviewResponse:
     """Создает новый отзыв на товар."""
     prepare_product = await db.scalar(
@@ -90,7 +93,10 @@ async def create_review(
         .where(Product.id == review.product_id)
         .values(rating=sum_raiting)
     )
-    new_review = Review(**review.model_dump())
+    new_review = Review(
+        **review.model_dump(),
+        user_id=current_user.id,
+    )
     db.add(new_review)
     await db.commit()
     await db.refresh(new_review)
@@ -102,7 +108,8 @@ async def create_review(
 )
 async def delete_review(
     review_id: int,
-    db: AsyncSession = Depends(get_async_db)
+    db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_admin),
 ) -> dict:
     """Удаляет отзыв на товар по ID."""
     request_review = await db.scalar(
@@ -122,16 +129,20 @@ async def delete_review(
         .where(Review.id != request_review.id)
     )
     result_reviews = product_reviews.all()
-    sum_raiting = sum(result_reviews) / len(result_reviews)
+    if not result_reviews:
+        sum_raiting = 0.00
+    else:
+        sum_raiting = sum(result_reviews) / len(result_reviews)
     await db.execute(
         update(Product)
         .where(Product.id == request_review.product_id)
         .values(rating=sum_raiting)
     )
-    await db.execute(
-        update(Review)
-        .where(Review.id == review_id)
-        .values(is_active=False)
-    )
+    if current_user:
+        await db.execute(
+            update(Review)
+            .where(Review.id == review_id)
+            .values(is_active=False)
+        )
     await db.commit()
     return {"message": "Review deleted"}
